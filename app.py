@@ -52,8 +52,23 @@ feature_columns = feature_info['all_columns']
 numeric_cols = feature_info['numeric_cols']
 categorical_cols = feature_info['categorical_cols']
 emission_range = joblib.load("emission_range.pkl")
-EMISSION_MIN = float(emission_range["min"])
-EMISSION_MAX = float(emission_range["max"])
+def emission_bound(value, name):
+    if isinstance(value, pd.Series):
+        if len(value) != 1:
+            raise ValueError(
+                f"Emission {name} must contain exactly one value; got {len(value)}. "
+                "Save the range for the emission target column only."
+            )
+        value = value.item()
+    return float(value)
+
+EMISSION_MIN = emission_bound(emission_range["min"], "min")
+EMISSION_MAX = emission_bound(emission_range["max"], "max")
+
+from math import isfinite
+if not (isfinite(EMISSION_MIN) and isfinite(EMISSION_MAX)
+        and EMISSION_MAX > EMISSION_MIN):
+    raise ValueError("Emission bounds must be finite, with max greater than min.")
 # ----------------------------------PAGE CONFIG------------------------------------
 st.set_page_config(page_title="Carbon Emission Prediction",layout="centered")
 st.title("🌏🍃 ECO-PREDICT :")
